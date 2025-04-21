@@ -1,6 +1,7 @@
 import pandas as pd
 import yfinance as yf
 from datetime import datetime, timedelta
+import pytz  # 添加pytz库用于处理时区
 import qlib
 from qlib.contrib.data.handler import Alpha158
 from qlib.contrib.model.gbdt import LGBModel
@@ -16,10 +17,13 @@ import shutil
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import StandardScaler
 
+# 定义东八区时区
+TIMEZONE_CN = pytz.timezone('Asia/Shanghai')
+
 # 获取BTC历史数据
 def get_btc_data(start_date='2018-01-01'):
     # 获取从start_date至今的BTC数据
-    btc = yf.download('BTC-USD', start=start_date, end=datetime.now().strftime('%Y-%m-%d'))
+    btc = yf.download('BTC-USD', start=start_date, end=datetime.now(TIMEZONE_CN).strftime('%Y-%m-%d'))
     
     # 打印btc的基本信息，帮助调试
     print(f"下载的数据形状: {btc.shape}")
@@ -366,8 +370,8 @@ def main():
         # 初始化qlib
         init_qlib(provider_uri=qlib_data_path)
         
-        # 获取当前日期
-        current_date = datetime.now().strftime('%Y-%m-%d')
+        # 获取当前日期（东八区）
+        current_date = datetime.now(TIMEZONE_CN).strftime('%Y-%m-%d')
         
         # 设置回测时间范围
         train_start = '2018-01-01'  # 使用更长的训练数据
@@ -377,7 +381,7 @@ def main():
         test_start = '2023-01-01'
         test_end = current_date
         
-        # 确定未来预测的时间范围
+        # 确定未来预测的时间范围（使用东八区时间）
         future_start = pd.Timestamp(current_date) + pd.Timedelta(days=1)
         future_start = future_start.strftime('%Y-%m-%d')
         future_end = calendar_dates[-1]  # 使用日历中的最后一个日期

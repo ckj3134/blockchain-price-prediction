@@ -9,6 +9,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import yfinance as yf
 from datetime import datetime, timedelta
+import pytz  # 添加pytz库用于处理时区
 from pathlib import Path
 from qlib.data.dataset import DatasetH
 from qlib.contrib.data.handler import Alpha158
@@ -17,6 +18,9 @@ from qlib.workflow import R
 from qlib.contrib.evaluate import risk_analysis
 from qlib.contrib.model.gbdt import LGBModel
 import qlib
+
+# 定义东八区时区
+TIMEZONE_CN = pytz.timezone('Asia/Shanghai')
 
 # 设置matplotlib支持中文显示
 import matplotlib.pyplot as plt
@@ -31,7 +35,7 @@ def get_eth_data(start_date='2015-01-01', end_date=None):
     
     Args:
         start_date: 开始日期，默认为2015-01-01
-        end_date: 结束日期，默认为当前日期
+        end_date: 结束日期，默认为当前日期（东八区）
         
     Returns:
         pandas.DataFrame: 处理后的以太坊数据
@@ -39,7 +43,7 @@ def get_eth_data(start_date='2015-01-01', end_date=None):
     import yfinance as yf
     
     if end_date is None:
-        end_date = datetime.now().strftime('%Y-%m-%d')
+        end_date = datetime.now(TIMEZONE_CN).strftime('%Y-%m-%d')
     
     # 下载以太坊历史数据
     print(f"下载以太坊数据 ({start_date} 到 {end_date})...")
@@ -720,8 +724,8 @@ def main():
         # 获取历史数据
         eth_data = get_eth_data(start_date=start_date)
         
-        # 生成未来日期
-        future_dates = generate_future_dates(datetime.now())
+        # 生成未来日期（东八区）
+        future_dates = generate_future_dates(datetime.now(TIMEZONE_CN))
         
         # 清理qlib_data目录
         qlib_data_dir = 'qlib_data'
@@ -739,11 +743,11 @@ def main():
         
         # 设置训练和预测日期
         # 使用最近两年的数据进行训练
-        end_date = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
-        train_start = (datetime.now() - timedelta(days=730)).strftime('%Y-%m-%d')  # 两年前
+        end_date = (datetime.now(TIMEZONE_CN) - timedelta(days=1)).strftime('%Y-%m-%d')
+        train_start = (datetime.now(TIMEZONE_CN) - timedelta(days=730)).strftime('%Y-%m-%d')  # 两年前
         train_end = end_date
-        future_start = (datetime.now()).strftime('%Y-%m-%d')
-        future_end = (datetime.now() + timedelta(days=30)).strftime('%Y-%m-%d')  # 预测30天
+        future_start = (datetime.now(TIMEZONE_CN)).strftime('%Y-%m-%d')
+        future_end = (datetime.now(TIMEZONE_CN) + timedelta(days=30)).strftime('%Y-%m-%d')  # 预测30天
         
         print(f"训练日期范围: {train_start} 到 {train_end}")
         print(f"预测日期范围: {future_start} 到 {future_end}")
@@ -785,8 +789,8 @@ def main():
             print(f"模型训练出错: {e}")
             print("生成随机预测作为替代方案...")
             # 获取未来30天的日期
-            future_end_date = datetime.now() + timedelta(days=30)
-            future_dates = generate_future_dates(datetime.now(), 30)
+            future_end_date = datetime.now(TIMEZONE_CN) + timedelta(days=30)
+            future_dates = generate_future_dates(datetime.now(TIMEZONE_CN), 30)
             predictions = []
             
             # 获取最后一个已知价格
@@ -829,7 +833,7 @@ def main():
         # 绘制预测结果
         print("绘制预测结果...")
         # 使用最近90天的历史数据
-        plot_date = (datetime.now() - timedelta(days=90)).strftime('%Y-%m-%d')
+        plot_date = (datetime.now(TIMEZONE_CN) - timedelta(days=90)).strftime('%Y-%m-%d')
         
         # 解决中文显示问题
         import matplotlib.font_manager as fm
